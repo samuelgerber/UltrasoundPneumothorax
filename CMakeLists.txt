@@ -15,6 +15,7 @@ find_package( ITK COMPONENTS
   ITKStatistics
   ITKIONRRD
   ITKIOPNG
+  ITKIOJPEG
 )
 INCLUDE(${ITK_USE_FILE} )
 
@@ -38,3 +39,6 @@ TARGET_LINK_LIBRARIES (IsoWavelet ${ITK_LIBRARIES} )
 
 ADD_EXECUTABLE(DerivativeRatio DerivativeRatio.cxx )
 TARGET_LINK_LIBRARIES (DerivativeRatio ${ITK_LIBRARIES} )
+
+ADD_EXECUTABLE(DerivativeRatio2D DerivativeRatio2D.cxx )
+TARGET_LINK_LIBRARIES (DerivativeRatio2D ${ITK_LIBRARIES} )

@@ -17,6 +17,7 @@
 #include "itkImageRegionIterator.h"
 #include "itkMedianImageFilter.h"
 #include "vnl_fft_1d.h"
+#include <math.h>
 
 #include <sstream>
 
@@ -47,7 +48,6 @@ int main(int argc, char **argv ){
   }
 
   std::string prefix = prefixArg.getValue();
-  const int fftSize = 127;
 
   typedef itk::Image< float, 3> FloatImage;
   FloatImage::Pointer image = ImageIO< FloatImage >::ReadImage( imageArg.getValue() );
@@ -57,7 +57,11 @@ int main(int argc, char **argv ){
 
 
   FloatImage::RegionType spectraRegion = region;
+  FloatImage::RegionType::SizeType spectraSize = size;
+  spectraSize[2] *= 2;
+  spectraRegion.SetSize(spectraSize);
   FloatImage::SpacingType spectraSpacing = spacing;
+  spacing[2] /= 2;
 
   FloatImage::Pointer  spectra = FloatImage::New();
   spectra->SetRegions( spectraRegion );
@@ -68,23 +72,22 @@ int main(int argc, char **argv ){
   typedef vnl_vector< ComplexType > ComplexVectorType;
   typedef std::vector< float >      SpectraVectorType;
   typedef vnl_fft_1d< float >       FFT1DType;
-  ComplexVectorType complexVector( size[2] );
   FloatImage::IndexType index;
   for(int i=0; i < size[0]; i++){
     index[0] = i;
     for(int j = 0; j < size[1]; j++){
       index[1] = j;
-      for(int k=fftSize-1; k < size[2]; k++){
-        for(int l = 0; l < fftSize; l++){
-          index[2] = l;
-          complexVector[l] = image->GetPixel(index);
-        }
-        FFT1DType fft1D( fftSize );
-        fft1D.bwd_transform( complexVector );
-        for(int l=0; l < size[2]; l++){
-          index[2] = l;
-          spectra->SetPixel( index, std::real( complexVector[l] * std::conj( complexVector[l] ) ) );
-        }
+      ComplexVectorType complexVector( spectraSize[2] );
+      for(int l = 0; l < size[2]; l++){
+        index[2] = l;
+        complexVector[l] = image->GetPixel(index);
+        complexVector[ spectraSize[2]-1 - l] = complexVector[l];
+      }
+      FFT1DType fft1D( spectraSize[2] );
+      fft1D.bwd_transform( complexVector );
+      for(int l=0; l < spectraSize[2]; l++){
+        index[2] = l;
+        spectra->SetPixel( index, log( 1 + std::real( complexVector[l] * std::conj( complexVector[l] ) ) ) );
       }
     }
     std::cout << i << std::endl;
