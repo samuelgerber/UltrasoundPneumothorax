@@ -52,6 +52,15 @@ int main(int argc, char **argv ){
   ImageType::RegionType region = image->GetLargestPossibleRegion();
   ImageType::RegionType::SizeType size = region.GetSize();
 
+
+  typedef itk::RescaleIntensityImageFilter< ImageType, ImageType> RescaleFilter;
+  RescaleFilter::Pointer rescale = RescaleFilter::New();
+  rescale->SetInput( image );
+  rescale->SetOutputMaximum( 1.0 );
+  rescale->SetOutputMinimum( 0 );
+  rescale->Update();
+
+
   typedef itk::DerivativeImageFilter< ImageType, ImageType > DerivativeFilter;
   /*
   DerivativeFilter::Pointer derivativeX = DerivativeFilter::New();
@@ -68,7 +77,7 @@ int main(int argc, char **argv ){
   DerivativeFilter::Pointer derivativeZ = DerivativeFilter::New();
   derivativeZ->SetDirection(2);
   derivativeZ->SetOrder( 2 );
-  derivativeZ->SetInput(image);
+  derivativeZ->SetInput( rescale->GetOutput() );
 
 
   typedef itk::AbsImageFilter<ImageType, ImageType> AbsFilter;
@@ -122,7 +131,7 @@ int main(int argc, char **argv ){
   gaussianZ->SetInput( absZ->GetOutput() );
  // gaussianY->SetUseImageSpacing(false);
   //gaussianY->SetVariance( 9 );
-  gaussianZ->SetSigma( 0.5 );
+  gaussianZ->SetSigma( 0.1 );
 
 
   /*
@@ -139,24 +148,24 @@ int main(int argc, char **argv ){
   typedef itk::ThresholdImageFilter<ImageType> ThresholdFilter;
   ThresholdFilter::Pointer threshold = ThresholdFilter::New();
   threshold->SetInput( gaussianZ->GetOutput() );
-  threshold->ThresholdAbove( 15 );
-  threshold->SetOutsideValue( 15 );
+  threshold->ThresholdAbove( 2 );
+  threshold->SetOutsideValue( 2 );
   threshold->Update();
 
   ImageIO<ImageType>::saveImage( threshold->GetOutput(), "derivativeZ.nrrd");
 
-/*
+
   typedef itk::Image< unsigned char, 3> LabelImageType;
-  typedef itk::RescaleIntensityImageFilter< ImageType, LabelImageType> RescaleFilter;
-  RescaleFilter::Pointer rescale = RescaleFilter::New();
-  rescale->SetInput( threshold->GetOutput() );
-  rescale->SetOutputMaximum( 100 );
-  rescale->SetOutputMinimum( 0 );
-  LabelImageType::Pointer labelImage = rescale->GetOutput();
+  typedef itk::RescaleIntensityImageFilter< ImageType, LabelImageType> LabelRescaleFilter;
+  LabelRescaleFilter::Pointer lrescale = LabelRescaleFilter::New();
+  lrescale->SetInput( threshold->GetOutput() );
+  lrescale->SetOutputMaximum( 4 );
+  lrescale->SetOutputMinimum( 0 );
+  LabelImageType::Pointer labelImage = lrescale->GetOutput();
   ImageIO<LabelImageType>::saveImage( labelImage, "derivativeZ-label.nrrd");
 
-  */
 
+/*
   typedef itk::Image< unsigned char, 3> LabelImageType;
   typedef itk::BinaryThresholdImageFilter<ImageType, LabelImageType> BinaryThresholdFilter;
   BinaryThresholdFilter::Pointer bthreshold = BinaryThresholdFilter::New();
@@ -169,7 +178,7 @@ int main(int argc, char **argv ){
   LabelImageType::Pointer labelImage = bthreshold->GetOutput();
   ImageIO<LabelImageType>::saveImage( labelImage, "derivativeZ-label.nrrd");
 
-
+*/
 
 
   /*
